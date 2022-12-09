@@ -5,6 +5,7 @@
 
 // Lego Dimensions: https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Lego_dimensions.svg/512px-Lego_dimensions.svg.png
 // Lego Colors: https://blogger.googleusercontent.com/img/a/AVvXsEi3sgDAZB13_deW0ESXjHMxgF94pYCGwNxTVYcBhSbrVKmpXCwAyZkaVgFJGyLb6gqKVcN28YCdIedvKU-0kWvQyf6L7eTuriMMiXFEYDdbL-jCEgyFNQMO0IRqjQdwgtatvMEUVvDUTlyMM9QfQQYDDoRDYr8P2QbixiidT0Ac4fZkqJjewL5OcY3FUA=s1600
+
 // 1 unit = 16mm
 const BRICK_HEIGHT = 0.6; // 9.6mm
 const BRICK_HEIGHT_FLAT = 0.2; // 3.2mm
@@ -13,7 +14,10 @@ const STUD_RADIUS = 0.15625; // 2.5mm
 const STUD_SPACING = 0.5; // 8mm
 
 let scene, camera, renderer, controls;
+// let serialController;
+// let serialData;
 let bricks = [];
+let currentBrick;
 
 window.onload = function(event) {
     // Create renderer
@@ -24,7 +28,7 @@ window.onload = function(event) {
 
     // Add camera and controls
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 0, 5);
+    camera.position.set(10, 8, 10);
     controls = new THREE.OrbitControls(camera, renderer.domElement);
 
     // Add lights
@@ -34,7 +38,10 @@ window.onload = function(event) {
     scene.add(directionalLight, ambientLight);
 
     // Create baseplate
-    createBrick(0, 0, 0, 24, 24, BRICK_HEIGHT_FLAT, 0xFF0000);
+    createBrick(0, -BRICK_HEIGHT_FLAT, 0, 24, 24, BRICK_HEIGHT_FLAT, 0xFF0000);
+
+    // Create the brick that will move with player input
+    currentBrick = createBrick(0, 1, 0, 2, 2, BRICK_HEIGHT, 0xFFFF00);
 
     // Update the scene
     update();
@@ -48,6 +55,8 @@ window.onresize = function(event) {
 
 function update() {
     requestAnimationFrame(update);
+
+    readSerial();
 
     controls.update();
     renderer.render(scene, camera);
@@ -80,4 +89,6 @@ function createBrick(x, y, z, studWidth = 2, studDepth = 2, brickHeight = BRICK_
     brickGroup.position.set(x, y, z);
 
     scene.add(brickGroup);
+
+    return brickGroup;
 }
