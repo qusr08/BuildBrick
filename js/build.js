@@ -3,13 +3,14 @@
 // https://threejs.org/
 // https://cdn.jsdelivr.net/npm/three@0.147.0/examples/
 
-// Dimensions: https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Lego_dimensions.svg/512px-Lego_dimensions.svg.png
-// Colors: https://blogger.googleusercontent.com/img/a/AVvXsEi3sgDAZB13_deW0ESXjHMxgF94pYCGwNxTVYcBhSbrVKmpXCwAyZkaVgFJGyLb6gqKVcN28YCdIedvKU-0kWvQyf6L7eTuriMMiXFEYDdbL-jCEgyFNQMO0IRqjQdwgtatvMEUVvDUTlyMM9QfQQYDDoRDYr8P2QbixiidT0Ac4fZkqJjewL5OcY3FUA=s1600
-const BRICK_HEIGHT = 0.6;
-const BRICK_HEIGHT_FLAT = 0.2;
-const STUD_HEIGHT = 0.10625;
-const STUD_RADIUS = 0.15625;
-const STUD_SPACING = 0.5;
+// Lego Dimensions: https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Lego_dimensions.svg/512px-Lego_dimensions.svg.png
+// Lego Colors: https://blogger.googleusercontent.com/img/a/AVvXsEi3sgDAZB13_deW0ESXjHMxgF94pYCGwNxTVYcBhSbrVKmpXCwAyZkaVgFJGyLb6gqKVcN28YCdIedvKU-0kWvQyf6L7eTuriMMiXFEYDdbL-jCEgyFNQMO0IRqjQdwgtatvMEUVvDUTlyMM9QfQQYDDoRDYr8P2QbixiidT0Ac4fZkqJjewL5OcY3FUA=s1600
+// 1 unit = 16mm
+const BRICK_HEIGHT = 0.6; // 9.6mm
+const BRICK_HEIGHT_FLAT = 0.2; // 3.2mm
+const STUD_HEIGHT = 0.10625; // 1.7mm
+const STUD_RADIUS = 0.15625; // 2.5mm
+const STUD_SPACING = 0.5; // 8mm
 
 let scene, camera, renderer, controls;
 let bricks = [];
