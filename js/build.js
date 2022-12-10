@@ -28,17 +28,16 @@ const BRICK_COLORS = [
     0xE95DA2
 ];
 
-const BRICK_PLACE_HEIGHT = BRICK_HEIGHT * 1.5;
-
 const WORLD_SIZE = 24;
 const WORLD_MIN = -(WORLD_SIZE * STUD_SPACING / 2) + STUD_SPACING;
 const WORLD_MAX = (WORLD_SIZE * STUD_SPACING / 2) - STUD_SPACING
 
 let scene, camera, renderer, controls;
-let bricks = [];
-let currentBrick;
+let brickTerrain = [];
+let activeBrick = undefined;
+let activeBrickColor = 9;
 
-window.onload = function (event) {
+window.onload = function(event) {
     // Create renderer
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -47,7 +46,7 @@ window.onload = function (event) {
 
     // Add camera and controls
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(10, 8, 10);
+    camera.position.set(WORLD_SIZE / 2, 8, 0);
     controls = new THREE.OrbitControls(camera, renderer.domElement);
 
     // Add lights
@@ -56,79 +55,96 @@ window.onload = function (event) {
     directionalLight.position.set(1, 1, 2);
     scene.add(directionalLight, ambientLight);
 
-    // Create baseplate
-    createBrick(0, -BRICK_HEIGHT_FLAT, 0, WORLD_SIZE, WORLD_SIZE, BRICK_HEIGHT_FLAT, BRICK_COLORS[0]);
+    // Create world baseplate
+    createBrick(0, -BRICK_HEIGHT_FLAT, 0, WORLD_SIZE, WORLD_SIZE, true, { color: BRICK_COLORS[0] });
+
+    // Load brick terrain
+    // [x][z][y]
+    for (let x = 0; x < WORLD_SIZE; x++) {
+        brickTerrain.push([]);
+        for (let z = 0; z < WORLD_SIZE; z++) {
+            brickTerrain[x].push([]);
+        }
+    }
 
     // Create the brick that will move with player input
-    currentBrick = createBrick(0, BRICK_PLACE_HEIGHT, 0, 2, 2, BRICK_HEIGHT, BRICK_COLORS[9]);
+    activeBrick = createBrick(WORLD_MAX, 0, WORLD_MAX, 2, 2, false, { color: BRICK_COLORS[activeBrickColor], transparent: true, opacity: 0.5 });
 
     // Update the scene
     update();
 }
 
-window.onresize = function (event) {
+window.onresize = function(event) {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
 }
 
-window.onkeydown = function (event) {
-    // console.log(event.keyCode);
+window.onkeydown = function(event) {
     switch (event.keyCode) {
         case 87: // W
         case 38: // Up
-            currentBrick.position.x = clamp(currentBrick.position.x - STUD_SPACING, WORLD_MIN, WORLD_MAX);
+            moveActiveBrick(-1, 0, 0);
             break;
         case 65: // A
         case 37: // Left
-            currentBrick.position.z = clamp(currentBrick.position.z + STUD_SPACING, WORLD_MIN, WORLD_MAX);
+            moveActiveBrick(0, 0, 1);
             break;
         case 83: // S
         case 40: // Down
-            currentBrick.position.x = clamp(currentBrick.position.x + STUD_SPACING, WORLD_MIN, WORLD_MAX);
+            moveActiveBrick(1, 0, 0);
             break;
         case 68: // D
         case 39: // Right
-            currentBrick.position.z = clamp(currentBrick.position.z - STUD_SPACING, WORLD_MIN, WORLD_MAX);
+            moveActiveBrick(0, 0, -1);
             break;
         case 32: // Space
+            placeActiveBrick();
             break;
         case 13: // Enter
             break;
     }
 }
 
-window.onkeyup = function (event) { }
+window.onkeyup = function(event) {}
 
 function update() {
     requestAnimationFrame(update);
 
     readSerial();
 
-    controls.update();
+    // controls.update();
     renderer.render(scene, camera);
 }
 
-function createBrick(x, y, z, studWidth = 2, studDepth = 2, brickHeight = BRICK_HEIGHT, color) {
+function createBrick(x, y, z, studWidth = 2, studDepth = 2, isFlat = false, meshOptions = {}) {
+    // Clamp position
+    x = clamp(x, WORLD_MIN, WORLD_MAX);
+    y = clamp(y, WORLD_MIN, WORLD_MAX);
+    z = clamp(z, WORLD_MIN, WORLD_MAX);
+
     // Create group
     let brickGroup = new THREE.Group();
+    let width = studWidth / 2;
+    let height = (isFlat ? BRICK_HEIGHT_FLAT : BRICK_HEIGHT);
+    let depth = studDepth / 2;
 
     // Create cube base
     let cube = new THREE.Mesh(
-        new THREE.BoxGeometry(studWidth / 2, brickHeight, studDepth / 2),
-        new THREE.MeshStandardMaterial({ color: color })
+        new THREE.BoxGeometry(width, height, depth),
+        new THREE.MeshStandardMaterial(meshOptions)
     );
-    cube.position.set(0, brickHeight / 2, 0);
+    cube.position.set(0, height / 2, 0);
     brickGroup.add(cube);
 
     // Create studs
-    for (let studX = -studWidth / 2; studX < studWidth / 2; studX++) {
-        for (let studZ = -studDepth / 2; studZ < studDepth / 2; studZ++) {
+    for (let studX = -width; studX < width; studX++) {
+        for (let studZ = -depth; studZ < depth; studZ++) {
             let stud = new THREE.Mesh(
                 new THREE.CylinderGeometry(STUD_RADIUS, STUD_RADIUS, STUD_HEIGHT, 20),
-                new THREE.MeshStandardMaterial({ color: color })
+                new THREE.MeshStandardMaterial(meshOptions)
             );
-            stud.position.set((studX * STUD_SPACING) + (STUD_SPACING / 2), brickHeight + (STUD_HEIGHT / 2), (studZ * STUD_SPACING) + (STUD_SPACING / 2));
+            stud.position.set((studX * STUD_SPACING) + (STUD_SPACING / 2), height + (STUD_HEIGHT / 2), (studZ * STUD_SPACING) + (STUD_SPACING / 2));
             brickGroup.add(stud);
         }
     }
@@ -140,6 +156,26 @@ function createBrick(x, y, z, studWidth = 2, studDepth = 2, brickHeight = BRICK_
     scene.add(brickGroup);
 
     return brickGroup;
+}
+
+function moveActiveBrick(moveX, moveY, moveZ) {
+    activeBrick.position.x = clamp(activeBrick.position.x + (moveX * STUD_SPACING), WORLD_MIN, WORLD_MAX);
+    activeBrick.position.y = clamp(activeBrick.position.y + (moveY * BRICK_HEIGHT), 0, 100);
+    activeBrick.position.z = clamp(activeBrick.position.z + (moveZ * STUD_SPACING), WORLD_MIN, WORLD_MAX);
+}
+
+function placeActiveBrick() {
+    let x = activeBrick.position.x;
+    let y = activeBrick.position.y;
+    let z = activeBrick.position.z;
+
+    let indexZ = (z * 2) + (WORLD_SIZE / 2);
+    let indexX = (x * 2) + (WORLD_SIZE / 2);
+
+    // console.log(activeBrick.position);
+    // console.log(indexX + ", " + indexZ);
+
+    brickTerrain[indexX][indexZ].push(createBrick(x, y, z, 2, 2, false, { color: BRICK_COLORS[activeBrickColor] }));
 }
 
 function clamp(num, min, max) {
