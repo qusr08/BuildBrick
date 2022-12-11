@@ -25,6 +25,13 @@ const WORLD_MAX = WORLD_SIZE - STUD_SPACING;
 const URL_PARAMS = new URLSearchParams(window.location.search);
 const CHARS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
 
+// https://stackoverflow.com/questions/9419263/how-to-play-audio
+// https://freesound.org/people/rioforce/packs/14369/?page=2#sound
+const SFX_MOVE = new Audio('../sfx/move.wav');
+const SFX_PLACE = new Audio('../sfx/place.wav');
+const SFX_SWITCH = new Audio('../sfx/switch.wav');
+const SFX_UNDO = new Audio('../sfx/undo.wav');
+
 let scene, camera, renderer, controls;
 let brickTerrain = [];
 let brickPlaceOrder = [];
@@ -95,19 +102,19 @@ window.onkeydown = function(event) {
     switch (event.keyCode) {
         case 87: // W
         case 38: // Up
-            moveActiveBrick(-1, 0, 0);
+            moveActiveBrick(-1, 0, 0, true);
             break;
         case 65: // A
         case 37: // Left
-            moveActiveBrick(0, 0, 1);
+            moveActiveBrick(0, 0, 1, true);
             break;
         case 83: // S
         case 40: // Down
-            moveActiveBrick(1, 0, 0);
+            moveActiveBrick(1, 0, 0, true);
             break;
         case 68: // D
         case 39: // Right
-            moveActiveBrick(0, 0, -1);
+            moveActiveBrick(0, 0, -1, true);
             break;
         case 32: // Space
             placeActiveBrick();
@@ -208,7 +215,7 @@ function loadBrickTerrain() {
             let z = CHARS.indexOf(itemData[2]);
             let color = BRICK_COLORS[CHARS.indexOf(itemData[3])];
 
-            brickTerrain[x][z][y] = createBrick(x, y, z, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: color });
+            brickTerrain[x][z][y] = createBrick(x, y * BRICK_HEIGHT, z, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: color });
         } catch {
             console.error("Corrupt terrain data!");
         }
@@ -217,10 +224,14 @@ function loadBrickTerrain() {
     updateActiveBrick();
 }
 
-function moveActiveBrick(moveX, moveY, moveZ) {
+function moveActiveBrick(moveX, moveY, moveZ, playSound) {
     activeBrick.position.x = clamp(activeBrick.position.x + (moveX * STUD_SPACING), WORLD_MIN, WORLD_MAX);
     activeBrick.position.y = clamp(activeBrick.position.y + (moveY * BRICK_HEIGHT), 0, WORLD_SIZE * BRICK_HEIGHT);
     activeBrick.position.z = clamp(activeBrick.position.z + (moveZ * STUD_SPACING), WORLD_MIN, WORLD_MAX);
+
+    if (playSound) {
+        SFX_MOVE.play();
+    }
 
     updateActiveBrick();
 }
@@ -233,10 +244,10 @@ function updateActiveBrick() {
     // Update the position of the active brick to always stay visible
     if (checkForSurroundingBricksAt(x, y, z)) {
         // If the brick is intersecting with a block, move upwards
-        moveActiveBrick(0, 1, 0);
+        moveActiveBrick(0, 1, 0, false);
     } else if (!checkForSurroundingBricksAt(x, y - BRICK_HEIGHT, z)) {
         // If the brick is floating in midair, move downwards
-        moveActiveBrick(0, -1, 0);
+        moveActiveBrick(0, -1, 0, false);
     }
 }
 
@@ -252,6 +263,8 @@ function placeActiveBrick() {
 
     brickTerrain[x][z][indexY(y)] = createBrick(x, y, z, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: BRICK_COLORS[activeBrickColor] });
     brickPlaceOrder.push({ x: x, y: y, z: z });
+
+    SFX_PLACE.play();
 
     updateActiveBrick();
 }
@@ -272,6 +285,8 @@ function undoPlace() {
     brickTerrain[previousX][previousZ][indexY(previousY)] = undefined;
     brickPlaceOrder.pop();
 
+    SFX_UNDO.play();
+
     updateActiveBrick();
 }
 
@@ -280,6 +295,8 @@ function setActiveBrickColor(colorIndex) {
     activeBrick.children.forEach(brickPart => {
         brickPart.material.color.set(BRICK_COLORS[activeBrickColor]);
     });
+
+    SFX_SWITCH.play();
 }
 
 // Returns true if there are bricks surrounding the position
