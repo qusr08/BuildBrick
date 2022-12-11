@@ -21,9 +21,11 @@ class SerialController {
                 let signals = await port.getSignals();
 
                 this.initialized = true;
-                connectElement.style.visibility = 'hidden';
-                statusElement.innerHTML = 'CONNECTED';
-                statusElement.style.backgroundColor = 'green';
+
+                // connectElement.style.visibility = 'hidden';
+                STATUS_ELEMENT.innerHTML = 'CONNECTED';
+                STATUS_ELEMENT.classList.remove("default");
+                STATUS_ELEMENT.classList.add("accent");
             } catch (err) {
                 console.error('There was an error opening the serial port:', err);
             }
@@ -64,17 +66,11 @@ class SerialController {
     }
 }
 
-let serialController = new SerialController();
-
-let statusElement = document.getElementById('status');
-let saveElement = document.getElementById('save');
-saveElement.addEventListener('pointerdown', () => {});
-let connectElement = document.getElementById('connect');
-connectElement.addEventListener('pointerdown', () => { serialController.init(); });
+const SERIAL_CONTROLLER = new SerialController();
 
 async function readSerial() {
     // Make sure the serial controller is initialized and not currently reading data before reading new data
-    if (serialController.initialized && !serialController.reading) {
-        console.log(await serialController.read());
+    if (SERIAL_CONTROLLER.initialized && !SERIAL_CONTROLLER.reading) {
+        console.log(await SERIAL_CONTROLLER.read());
     }
 }

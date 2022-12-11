@@ -21,6 +21,10 @@ const WORLD_SIZE = 24;
 const WORLD_MIN = STUD_SPACING;
 const WORLD_MAX = WORLD_SIZE - STUD_SPACING;
 
+// https://www.sitepoint.com/get-url-parameters-with-javascript/
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const CHARS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'];
+
 let scene, camera, renderer, controls;
 let brickTerrain = [];
 let activeBrick = undefined;
@@ -33,11 +37,18 @@ window.onload = function(event) {
     document.body.appendChild(renderer.domElement);
     scene = new THREE.Scene();
 
-    // Add camera and controls
+    // Add camera
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(WORLD_SIZE * 3 / 2, WORLD_SIZE / 2, WORLD_SIZE / 2);
+    camera.position.set(WORLD_SIZE * 3 / 2, WORLD_SIZE, WORLD_SIZE / 2);
+
+    // Add controls
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.target.set(WORLD_SIZE / 2, 0, WORLD_SIZE / 2);
+    controls.minPolarAngle = 0;
+    controls.maxPolarAngle = 3.14 / 2; // Two pi
+    controls.enableDamping = true;
+    controls.enablePan = false;
+    // controls.autoRotate = true;
 
     // Add lights
     let ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.3);
@@ -48,7 +59,7 @@ window.onload = function(event) {
     // Create world baseplate
     createBrick(WORLD_SIZE / 2, -BRICK_HEIGHT_FLAT, WORLD_SIZE / 2, WORLD_SIZE, WORLD_SIZE, true, { color: BRICK_COLORS[0] });
 
-    // Load brick terrain
+    // Create brick terrain array
     // [x][z][y]
     for (let x = 0; x < WORLD_SIZE; x++) {
         brickTerrain.push([]);
@@ -64,6 +75,9 @@ window.onload = function(event) {
     activeBrick = createBrick(WORLD_MAX, 0, WORLD_MAX, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: 0xFFFFFF, transparent: true, opacity: ACTIVE_BRICK_ALPHA });
     // Set the color to orange to start
     setActiveBrickColor(9);
+
+    // Load brick terrain from URL
+    loadBrickTerrain();
 
     // Update the scene
     update();
@@ -101,8 +115,6 @@ window.onkeydown = function(event) {
             break;
     }
 }
-
-window.onkeyup = function(event) {}
 
 function update() {
     requestAnimationFrame(update);
@@ -147,15 +159,68 @@ function createBrick(x, y, z, width = 2, depth = 2, isFlat = false, meshOptions 
     return brickGroup;
 }
 
+function saveBrickTerrain() {
+    let saveData = "";
+
+    for (let x = 0; x < WORLD_SIZE; x++) {
+        for (let z = 0; z < WORLD_SIZE; z++) {
+            for (let y = 0; y < WORLD_SIZE; y++) {
+                if (brickTerrain[x][z][y] != undefined) {
+                    let xString = CHARS[x];
+                    let yString = CHARS[y];
+                    let zString = CHARS[z];
+                    let colorString = CHARS[BRICK_COLORS.indexOf(brickTerrain[x][z][y].children[0].material.color.getHex())];
+                    saveData += xString + yString + zString + colorString;
+                }
+            }
+        }
+    }
+
+    URL_PARAMS.set("terrain", saveData);
+    window.location.search = URL_PARAMS;
+}
+
+function loadBrickTerrain() {
+    // If there is no terrain parameter, there is nothing to load
+    if (!URL_PARAMS.has("terrain")) {
+        return;
+    }
+
+    // Split up the terrain parameter
+    // https://codingbeautydev.com/blog/javascript-split-string-every-n-characters/#:~:text=To%20split%20a%20string%20every%20N%20characters%20in%20JavaScript%2C%20call,that%20each%20has%20N%20characters.
+    let loadData = URL_PARAMS.get("terrain").match(/.{1,4}/g);
+    // If there is no brick data to split up, there is nothing to load
+    if (loadData == undefined || loadData.length == 0) {
+        return;
+    }
+
+    loadData.forEach(item => {
+        let itemData = item.match(/.{1,1}/g);
+
+        try {
+            let x = CHARS.indexOf(itemData[0]);
+            let y = CHARS.indexOf(itemData[1]);
+            let z = CHARS.indexOf(itemData[2]);
+            let color = BRICK_COLORS[CHARS.indexOf(itemData[3])];
+
+            brickTerrain[x][z][y] = createBrick(x, y, z, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: color });
+        } catch {
+            console.error("Corrupt terrain data!");
+        }
+    });
+
+    updateActiveBrick();
+}
+
 function moveActiveBrick(moveX, moveY, moveZ) {
     activeBrick.position.x = clamp(activeBrick.position.x + (moveX * STUD_SPACING), WORLD_MIN, WORLD_MAX);
     activeBrick.position.y = clamp(activeBrick.position.y + (moveY * BRICK_HEIGHT), 0, WORLD_SIZE * BRICK_HEIGHT);
     activeBrick.position.z = clamp(activeBrick.position.z + (moveZ * STUD_SPACING), WORLD_MIN, WORLD_MAX);
 
-    updateActiveBrickCollision();
+    updateActiveBrick();
 }
 
-function updateActiveBrickCollision() {
+function updateActiveBrick() {
     let x = activeBrick.position.x;
     let y = activeBrick.position.y;
     let z = activeBrick.position.z;
@@ -182,12 +247,11 @@ function placeActiveBrick() {
 
     brickTerrain[x][z][indexY(y)] = createBrick(x, y, z, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: BRICK_COLORS[activeBrickColor] });
 
-    updateActiveBrickCollision();
+    updateActiveBrick();
 }
 
 function setActiveBrickColor(colorIndex) {
     activeBrickColor = colorIndex;
-
     activeBrick.children.forEach(brickPart => {
         brickPart.material.color.set(BRICK_COLORS[activeBrickColor]);
     });

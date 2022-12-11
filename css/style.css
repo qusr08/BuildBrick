@@ -19,6 +19,15 @@ body {
     z-index: 100;
 }
 
+
+/* #left>* {
+    text-align: left;
+}
+
+#right>* {
+    text-align: right;
+} */
+
 #left {
     left: 5px;
 }
@@ -28,13 +37,25 @@ body {
 }
 
 #connect,
-#status,
 #save {
-    padding: 10px 15px 10px 15px;
     cursor: pointer;
+}
+
+.item {
+    padding: 10px 15px 10px 15px;
+    color: black;
+    transition: background-color 0.2s ease;
+}
+
+.item:hover {
     background-color: white;
 }
 
-#status {
-    background-color: red;
+.default {
+    background-color: white;
+}
+
+.accent {
+    /* Orange lego brick color */
+    background-color: #F57D20;
 }

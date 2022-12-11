@@ -16,17 +16,12 @@
 To Do:
 - Building *
     - Ability to reset build area
-    - Ability to undo build move?
+    - Ability to undo build move
 - Sound Effects *
     - https://www.google.com/search?q=lego+brick+sound+effects&rlz=1C1CHBF_enUS862US862&oq=lego+brick+sound+effects&aqs=chrome..69i57.3304j0j7&sourceid=chrome&ie=UTF-8
     - When moving brick and swapping brick color (can use the same sound effect)
     - When placing brick
     - When clearing build area
-- Saving creations *
-    - Set url to the brick data and read it on webpage load (this way people can share anything they made simply by a link)
-        - https://www.sitepoint.com/get-url-parameters-with-javascript/
-        - For each block: XXYYZZCC
-        - Base 36 conversion: XYZC
 - Get Ardiuno to control website *
     - Parse input from sensors
 
@@ -35,15 +30,17 @@ To Do:
     - Would also make controls easier to use
     - Maybe do a view mode a build mode, where when building you can place blocks and the camera is fixed, and in view mode the camera circles around the creation
 
+- Skybox ?
  -->
 
 <body>
     <div id="left">
-        <p id="status">NOT CONNECTED</p>
-        <p id="connect">CONNECT TO SERIAL PORT</p>
+        <p id="status" class="item default">NOT CONNECTED</p>
+        <p id="connect" class="item accent">CONNECT TO BUILD BRICK</p>
     </div>
     <div id="right">
-        <p id="save">SAVE BUILD</p>
+        <p class="item default">COPY URL TO SAVE BUILD</p>
+        <p id="save" class="item accent">SAVE BUILD</p>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
@@ -51,6 +48,7 @@ To Do:
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
     <script src="js/serial.js"></script>
     <script src="js/build.js"></script>
+    <script src="js/main.js"></script>
 </body>
 
 </html>
