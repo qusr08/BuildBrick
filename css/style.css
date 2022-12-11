@@ -9,22 +9,29 @@ body {
     height: 100vh;
 }
 
-content {
+#left,
+#right {
     position: absolute;
-    left: 5px;
     top: 5px;
     display: flex;
     flex-flow: column nowrap;
     gap: 5px;
+    z-index: 100;
+}
+
+#left {
+    left: 5px;
+}
+
+#right {
+    right: 5px;
 }
 
 #connect,
-#status {
+#status,
+#save {
     padding: 10px 15px 10px 15px;
     cursor: pointer;
-}
-
-#connect {
     background-color: white;
 }
 

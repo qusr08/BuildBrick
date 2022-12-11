@@ -5,37 +5,26 @@
 
 // Lego Dimensions: https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Lego_dimensions.svg/512px-Lego_dimensions.svg.png
 // 1 unit = 16mm
-const BRICK_HEIGHT = 0.6; // 9.6mm
-const BRICK_HEIGHT_FLAT = 0.2; // 3.2mm
-const STUD_HEIGHT = 0.10625; // 1.7mm
-const STUD_RADIUS = 0.15625; // 2.5mm
-const STUD_SPACING = 0.5; // 8mm
+const BRICK_HEIGHT = 0.6 * 2; // 9.6mm * 2
+const BRICK_HEIGHT_FLAT = 0.2 * 2; // 3.2mm * 2
+const STUD_HEIGHT = 0.10625 * 2; // 1.7mm * 2
+const STUD_RADIUS = 0.15625 * 2; // 2.5mm * 2
+const STUD_SPACING = 0.5 * 2; // 8mm * 2
 
 // Lego Colors: https://blogger.googleusercontent.com/img/a/AVvXsEi3sgDAZB13_deW0ESXjHMxgF94pYCGwNxTVYcBhSbrVKmpXCwAyZkaVgFJGyLb6gqKVcN28YCdIedvKU-0kWvQyf6L7eTuriMMiXFEYDdbL-jCEgyFNQMO0IRqjQdwgtatvMEUVvDUTlyMM9QfQQYDDoRDYr8P2QbixiidT0Ac4fZkqJjewL5OcY3FUA=s1600
-const BRICK_COLORS = [
-    0xFFFFFF,
-    0x151515,
-    0xA0A19F,
-    0x9675B4,
-    0x006CB7,
-    0x00A3DA,
-    0x009247,
-    0x00A8AF,
-    0xF7D112,
-    0xF57D20,
-    0xA65322,
-    0xE51E26,
-    0xE95DA2
-];
+const BRICK_COLORS = [0xFFFFFF, 0x151515, 0xA0A19F, 0x9675B4, 0x006CB7, 0x00A3DA, 0x009247, 0x00A8AF, 0xF7D112, 0xF57D20, 0xA65322, 0xE51E26, 0xE95DA2];
+
+const ACTIVE_BRICK_ALPHA = 0.65;
+const ACTIVE_BRICK_SIZE = 2;
 
 const WORLD_SIZE = 24;
-const WORLD_MIN = -(WORLD_SIZE * STUD_SPACING / 2) + STUD_SPACING;
-const WORLD_MAX = (WORLD_SIZE * STUD_SPACING / 2) - STUD_SPACING
+const WORLD_MIN = STUD_SPACING;
+const WORLD_MAX = WORLD_SIZE - STUD_SPACING;
 
 let scene, camera, renderer, controls;
 let brickTerrain = [];
 let activeBrick = undefined;
-let activeBrickColor = 9;
+let activeBrickColor = 0;
 
 window.onload = function(event) {
     // Create renderer
@@ -46,8 +35,9 @@ window.onload = function(event) {
 
     // Add camera and controls
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(WORLD_SIZE / 2, 8, 0);
+    camera.position.set(WORLD_SIZE * 3 / 2, WORLD_SIZE / 2, WORLD_SIZE / 2);
     controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(WORLD_SIZE / 2, 0, WORLD_SIZE / 2);
 
     // Add lights
     let ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.3);
@@ -56,7 +46,7 @@ window.onload = function(event) {
     scene.add(directionalLight, ambientLight);
 
     // Create world baseplate
-    createBrick(0, -BRICK_HEIGHT_FLAT, 0, WORLD_SIZE, WORLD_SIZE, true, { color: BRICK_COLORS[0] });
+    createBrick(WORLD_SIZE / 2, -BRICK_HEIGHT_FLAT, WORLD_SIZE / 2, WORLD_SIZE, WORLD_SIZE, true, { color: BRICK_COLORS[0] });
 
     // Load brick terrain
     // [x][z][y]
@@ -64,11 +54,16 @@ window.onload = function(event) {
         brickTerrain.push([]);
         for (let z = 0; z < WORLD_SIZE; z++) {
             brickTerrain[x].push([]);
+            for (let y = 0; y < WORLD_SIZE; y++) {
+                brickTerrain[x][z].push(undefined);
+            }
         }
     }
 
     // Create the brick that will move with player input
-    activeBrick = createBrick(WORLD_MAX, 0, WORLD_MAX, 2, 2, false, { color: BRICK_COLORS[activeBrickColor], transparent: true, opacity: 0.5 });
+    activeBrick = createBrick(WORLD_MAX, 0, WORLD_MAX, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: 0xFFFFFF, transparent: true, opacity: ACTIVE_BRICK_ALPHA });
+    // Set the color to orange to start
+    setActiveBrickColor(9);
 
     // Update the scene
     update();
@@ -102,6 +97,7 @@ window.onkeydown = function(event) {
             placeActiveBrick();
             break;
         case 13: // Enter
+            setActiveBrickColor((activeBrickColor + 1) % BRICK_COLORS.length);
             break;
     }
 }
@@ -113,21 +109,14 @@ function update() {
 
     readSerial();
 
-    // controls.update();
+    controls.update();
     renderer.render(scene, camera);
 }
 
-function createBrick(x, y, z, studWidth = 2, studDepth = 2, isFlat = false, meshOptions = {}) {
-    // Clamp position
-    x = clamp(x, WORLD_MIN, WORLD_MAX);
-    y = clamp(y, WORLD_MIN, WORLD_MAX);
-    z = clamp(z, WORLD_MIN, WORLD_MAX);
-
+function createBrick(x, y, z, width = 2, depth = 2, isFlat = false, meshOptions = {}) {
     // Create group
     let brickGroup = new THREE.Group();
-    let width = studWidth / 2;
     let height = (isFlat ? BRICK_HEIGHT_FLAT : BRICK_HEIGHT);
-    let depth = studDepth / 2;
 
     // Create cube base
     let cube = new THREE.Mesh(
@@ -138,8 +127,8 @@ function createBrick(x, y, z, studWidth = 2, studDepth = 2, isFlat = false, mesh
     brickGroup.add(cube);
 
     // Create studs
-    for (let studX = -width; studX < width; studX++) {
-        for (let studZ = -depth; studZ < depth; studZ++) {
+    for (let studX = -width / 2; studX < width / 2; studX++) {
+        for (let studZ = -depth / 2; studZ < depth / 2; studZ++) {
             let stud = new THREE.Mesh(
                 new THREE.CylinderGeometry(STUD_RADIUS, STUD_RADIUS, STUD_HEIGHT, 20),
                 new THREE.MeshStandardMaterial(meshOptions)
@@ -160,8 +149,25 @@ function createBrick(x, y, z, studWidth = 2, studDepth = 2, isFlat = false, mesh
 
 function moveActiveBrick(moveX, moveY, moveZ) {
     activeBrick.position.x = clamp(activeBrick.position.x + (moveX * STUD_SPACING), WORLD_MIN, WORLD_MAX);
-    activeBrick.position.y = clamp(activeBrick.position.y + (moveY * BRICK_HEIGHT), 0, 100);
+    activeBrick.position.y = clamp(activeBrick.position.y + (moveY * BRICK_HEIGHT), 0, WORLD_SIZE * BRICK_HEIGHT);
     activeBrick.position.z = clamp(activeBrick.position.z + (moveZ * STUD_SPACING), WORLD_MIN, WORLD_MAX);
+
+    updateActiveBrickCollision();
+}
+
+function updateActiveBrickCollision() {
+    let x = activeBrick.position.x;
+    let y = activeBrick.position.y;
+    let z = activeBrick.position.z;
+
+    // Update the position of the active brick to always stay visible
+    if (checkForSurroundingBricksAt(x, y, z)) {
+        // If the brick is intersecting with a block, move upwards
+        moveActiveBrick(0, 1, 0);
+    } else if (!checkForSurroundingBricksAt(x, y - BRICK_HEIGHT, z)) {
+        // If the brick is floating in midair, move downwards
+        moveActiveBrick(0, -1, 0);
+    }
 }
 
 function placeActiveBrick() {
@@ -169,13 +175,56 @@ function placeActiveBrick() {
     let y = activeBrick.position.y;
     let z = activeBrick.position.z;
 
-    let indexZ = (z * 2) + (WORLD_SIZE / 2);
-    let indexX = (x * 2) + (WORLD_SIZE / 2);
+    // If y is at the top of the world, then do not place a brick
+    if (indexY(y) == WORLD_SIZE) {
+        return;
+    }
 
-    // console.log(activeBrick.position);
-    // console.log(indexX + ", " + indexZ);
+    brickTerrain[x][z][indexY(y)] = createBrick(x, y, z, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: BRICK_COLORS[activeBrickColor] });
 
-    brickTerrain[indexX][indexZ].push(createBrick(x, y, z, 2, 2, false, { color: BRICK_COLORS[activeBrickColor] }));
+    updateActiveBrickCollision();
+}
+
+function setActiveBrickColor(colorIndex) {
+    activeBrickColor = colorIndex;
+
+    activeBrick.children.forEach(brickPart => {
+        brickPart.material.color.set(BRICK_COLORS[activeBrickColor]);
+    });
+}
+
+// Returns true if there are bricks surrounding the position
+function checkForSurroundingBricksAt(x, y, z) {
+    return (
+        checkForBrickAt(x + STUD_SPACING, y, z - STUD_SPACING) || checkForBrickAt(x + STUD_SPACING, y, z) || checkForBrickAt(x + STUD_SPACING, y, z + STUD_SPACING) ||
+        checkForBrickAt(x, y, z - STUD_SPACING) || checkForBrickAt(x, y, z) || checkForBrickAt(x, y, z + STUD_SPACING) ||
+        checkForBrickAt(x - STUD_SPACING, y, z - STUD_SPACING) || checkForBrickAt(x - STUD_SPACING, y, z) || checkForBrickAt(x - STUD_SPACING, y, z + STUD_SPACING)
+    );
+}
+
+// Returns true if there is a brick at the position
+function checkForBrickAt(x, y, z) {
+    // If the check is out of bounds on the x or z axis, then there is no block there
+    if (x < WORLD_MIN || x > WORLD_MAX || z < WORLD_MIN || z > WORLD_MAX) {
+        return false;
+    }
+
+    // Since the ground should act as a block, this should also return true if the y value is less than 0
+    if (y < 0) {
+        return true;
+    }
+
+    // If the block at that position is undefined, then there is no block at the position
+    if (brickTerrain[x][z][indexY(y)] == undefined) {
+        return false;
+    }
+
+    // Return true if all of the previous checks fail
+    return true;
+}
+
+function indexY(y) {
+    return Math.round(y / BRICK_HEIGHT);
 }
 
 function clamp(num, min, max) {

@@ -67,6 +67,8 @@ class SerialController {
 let serialController = new SerialController();
 
 let statusElement = document.getElementById('status');
+let saveElement = document.getElementById('save');
+saveElement.addEventListener('pointerdown', () => {});
 let connectElement = document.getElementById('connect');
 connectElement.addEventListener('pointerdown', () => { serialController.init(); });
 

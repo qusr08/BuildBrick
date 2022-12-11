@@ -15,9 +15,8 @@
 
 To Do:
 - Building *
-    - Ability to place brick
-    - Ability to cycle through brick color
     - Ability to reset build area
+    - Ability to undo build move?
 - Sound Effects *
     - https://www.google.com/search?q=lego+brick+sound+effects&rlz=1C1CHBF_enUS862US862&oq=lego+brick+sound+effects&aqs=chrome..69i57.3304j0j7&sourceid=chrome&ie=UTF-8
     - When moving brick and swapping brick color (can use the same sound effect)
@@ -27,6 +26,7 @@ To Do:
     - Set url to the brick data and read it on webpage load (this way people can share anything they made simply by a link)
         - https://www.sitepoint.com/get-url-parameters-with-javascript/
         - For each block: XXYYZZCC
+        - Base 36 conversion: XYZC
 - Get Ardiuno to control website *
     - Parse input from sensors
 
@@ -38,10 +38,13 @@ To Do:
  -->
 
 <body>
-    <content>
+    <div id="left">
         <p id="status">NOT CONNECTED</p>
         <p id="connect">CONNECT TO SERIAL PORT</p>
-    </content>
+    </div>
+    <div id="right">
+        <p id="save">SAVE BUILD</p>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script> -->
