@@ -27,10 +27,14 @@ const CHARS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 
 
 // https://stackoverflow.com/questions/9419263/how-to-play-audio
 // https://freesound.org/people/rioforce/packs/14369/?page=2#sound
-const SFX_MOVE = new Audio('../sfx/move.wav');
-const SFX_PLACE = new Audio('../sfx/place.wav');
-const SFX_SWITCH = new Audio('../sfx/switch.wav');
-const SFX_UNDO = new Audio('../sfx/undo.wav');
+// const SFX_MOVE = new Audio('../sfx/move.wav');
+// const SFX_PLACE = new Audio('../sfx/place.wav');
+// const SFX_SWITCH = new Audio('../sfx/switch.wav');
+// const SFX_UNDO = new Audio('../sfx/undo.wav');
+const SFX_MOVE = new Audio('/BuildBrick/sfx/move.wav');
+const SFX_PLACE = new Audio('/BuildBrick/sfx/place.wav');
+const SFX_SWITCH = new Audio('/BuildBrick/sfx/switch.wav');
+const SFX_UNDO = new Audio('/BuildBrick/sfx/undo.wav');
 
 let scene, camera, renderer, controls;
 let brickTerrain = [];
