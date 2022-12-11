@@ -41,6 +41,11 @@ body {
     cursor: pointer;
 }
 
+#status {
+    /* Red lego brick color */
+    background-color: #E51E26;
+}
+
 .item {
     padding: 10px 15px 10px 15px;
     color: black;

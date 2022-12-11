@@ -24,8 +24,7 @@ class SerialController {
 
                 // connectElement.style.visibility = 'hidden';
                 STATUS_ELEMENT.innerHTML = 'CONNECTED';
-                STATUS_ELEMENT.classList.remove("default");
-                STATUS_ELEMENT.classList.add("accent");
+                STATUS_ELEMENT.style.backgroundColor = `#009247`;
             } catch (err) {
                 console.error('There was an error opening the serial port:', err);
             }

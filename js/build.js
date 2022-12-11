@@ -27,6 +27,7 @@ const CHARS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 
 
 let scene, camera, renderer, controls;
 let brickTerrain = [];
+let brickPlaceOrder = [];
 let activeBrick = undefined;
 let activeBrickColor = 0;
 
@@ -34,6 +35,7 @@ window.onload = function(event) {
     // Create renderer
     renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x424242, 1);
     document.body.appendChild(renderer.domElement);
     scene = new THREE.Scene();
 
@@ -112,6 +114,9 @@ window.onkeydown = function(event) {
             break;
         case 13: // Enter
             setActiveBrickColor((activeBrickColor + 1) % BRICK_COLORS.length);
+            break;
+        case 85: // U
+            undoPlace();
             break;
     }
 }
@@ -246,6 +251,26 @@ function placeActiveBrick() {
     }
 
     brickTerrain[x][z][indexY(y)] = createBrick(x, y, z, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: BRICK_COLORS[activeBrickColor] });
+    brickPlaceOrder.push({ x: x, y: y, z: z });
+
+    updateActiveBrick();
+}
+
+function undoPlace() {
+    // If there is nothing to undo, do not try and undo the place
+    if (brickPlaceOrder.length == 0) {
+        return;
+    }
+
+    // Get the coordinates of the previous block
+    let previousX = brickPlaceOrder[brickPlaceOrder.length - 1].x;
+    let previousY = brickPlaceOrder[brickPlaceOrder.length - 1].y;
+    let previousZ = brickPlaceOrder[brickPlaceOrder.length - 1].z;
+
+    // Remove the brick from the scene
+    scene.remove(brickTerrain[previousX][previousZ][indexY(previousY)]);
+    brickTerrain[previousX][previousZ][indexY(previousY)] = undefined;
+    brickPlaceOrder.pop();
 
     updateActiveBrick();
 }
@@ -274,7 +299,7 @@ function checkForBrickAt(x, y, z) {
     }
 
     // Since the ground should act as a block, this should also return true if the y value is less than 0
-    if (y < 0) {
+    if (indexY(y) < 0) {
         return true;
     }
 
