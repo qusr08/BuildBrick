@@ -27,14 +27,10 @@ const CHARS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'a', 'b', 'c', 
 
 // https://stackoverflow.com/questions/9419263/how-to-play-audio
 // https://freesound.org/people/rioforce/packs/14369/?page=2#sound
-// const SFX_MOVE = new Audio('../sfx/move.wav');
-// const SFX_PLACE = new Audio('../sfx/place.wav');
-// const SFX_SWITCH = new Audio('../sfx/switch.wav');
-// const SFX_UNDO = new Audio('../sfx/undo.wav');
-const SFX_MOVE = new Audio('/BuildBrick/sfx/move.wav');
-const SFX_PLACE = new Audio('/BuildBrick/sfx/place.wav');
-const SFX_SWITCH = new Audio('/BuildBrick/sfx/switch.wav');
-const SFX_UNDO = new Audio('/BuildBrick/sfx/undo.wav');
+const SFX_MOVE = new Audio('/sfx/move.wav');
+const SFX_PLACE = new Audio('/sfx/place.wav');
+const SFX_SWITCH = new Audio('/sfx/switch.wav');
+const SFX_UNDO = new Audio('/sfx/undo.wav');
 
 let scene, camera, renderer, controls;
 let brickTerrain = [];
@@ -59,6 +55,8 @@ window.onload = function(event) {
     controls.target.set(WORLD_SIZE / 2, 0, WORLD_SIZE / 2);
     controls.minPolarAngle = 0;
     controls.maxPolarAngle = 3.14 / 2; // Two pi
+    controls.minDistance = WORLD_SIZE * 0.5;
+    controls.maxDistance = WORLD_SIZE * 1.5;
     controls.enableDamping = true;
     controls.enablePan = false;
     // controls.autoRotate = true;
@@ -70,7 +68,7 @@ window.onload = function(event) {
     scene.add(directionalLight, ambientLight);
 
     // Create world baseplate
-    createBrick(WORLD_SIZE / 2, -BRICK_HEIGHT_FLAT, WORLD_SIZE / 2, WORLD_SIZE, WORLD_SIZE, true, { color: BRICK_COLORS[0] });
+    createBrick({ x: WORLD_SIZE / 2, y: -BRICK_HEIGHT_FLAT, z: WORLD_SIZE / 2 }, WORLD_SIZE, WORLD_SIZE, true, { color: BRICK_COLORS[0] });
 
     // Create brick terrain array
     // [x][z][y]
@@ -85,7 +83,7 @@ window.onload = function(event) {
     }
 
     // Create the brick that will move with player input
-    activeBrick = createBrick(WORLD_MAX, 0, WORLD_MAX, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: 0xFFFFFF, transparent: true, opacity: ACTIVE_BRICK_ALPHA });
+    activeBrick = createBrick({ x: WORLD_MAX, y: 0, z: WORLD_MAX }, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: 0xFFFFFF, transparent: true, opacity: ACTIVE_BRICK_ALPHA });
     // Set the color to orange to start
     setActiveBrickColor(9);
 
@@ -121,13 +119,13 @@ window.onkeydown = function(event) {
             moveActiveBrick(0, 0, -1, true);
             break;
         case 32: // Space
-            placeActiveBrick();
+            placeBrick(activeBrick.position);
             break;
         case 13: // Enter
             setActiveBrickColor((activeBrickColor + 1) % BRICK_COLORS.length);
             break;
         case 85: // U
-            undoPlace();
+            undoBrick();
             break;
     }
 }
@@ -141,7 +139,7 @@ function update() {
     renderer.render(scene, camera);
 }
 
-function createBrick(x, y, z, width = 2, depth = 2, isFlat = false, meshOptions = {}) {
+function createBrick(position, width = 2, depth = 2, isFlat = false, meshOptions = {}) {
     // Create group
     let brickGroup = new THREE.Group();
     let height = (isFlat ? BRICK_HEIGHT_FLAT : BRICK_HEIGHT);
@@ -167,7 +165,7 @@ function createBrick(x, y, z, width = 2, depth = 2, isFlat = false, meshOptions 
     }
 
     // Move all pieces of the brick
-    brickGroup.position.set(x, y, z);
+    brickGroup.position.set(position.x, position.y, position.z);
 
     // Add the entire brick to the scene
     scene.add(brickGroup);
@@ -234,6 +232,7 @@ function moveActiveBrick(moveX, moveY, moveZ, playSound) {
     activeBrick.position.z = clamp(activeBrick.position.z + (moveZ * STUD_SPACING), WORLD_MIN, WORLD_MAX);
 
     if (playSound) {
+        SFX_MOVE.currentTime = 0;
         SFX_MOVE.play();
     }
 
@@ -241,54 +240,47 @@ function moveActiveBrick(moveX, moveY, moveZ, playSound) {
 }
 
 function updateActiveBrick() {
-    let x = activeBrick.position.x;
-    let y = activeBrick.position.y;
-    let z = activeBrick.position.z;
+    let position = activeBrick.position;
 
     // Update the position of the active brick to always stay visible
-    if (checkForSurroundingBricksAt(x, y, z)) {
+    if (checkForIntersectingBrickAt(position)) {
         // If the brick is intersecting with a block, move upwards
         moveActiveBrick(0, 1, 0, false);
-    } else if (!checkForSurroundingBricksAt(x, y - BRICK_HEIGHT, z)) {
+    } else if (!checkForIntersectingBrickAt({ x: position.x, y: position.y - BRICK_HEIGHT, z: position.z })) {
         // If the brick is floating in midair, move downwards
         moveActiveBrick(0, -1, 0, false);
     }
 }
 
-function placeActiveBrick() {
-    let x = activeBrick.position.x;
-    let y = activeBrick.position.y;
-    let z = activeBrick.position.z;
-
+function placeBrick(position) {
     // If y is at the top of the world, then do not place a brick
-    if (indexY(y) == WORLD_SIZE) {
+    if (indexY(position.y) == WORLD_SIZE) {
         return;
     }
 
-    brickTerrain[x][z][indexY(y)] = createBrick(x, y, z, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: BRICK_COLORS[activeBrickColor] });
-    brickPlaceOrder.push({ x: x, y: y, z: z });
+    brickTerrain[position.x][position.z][indexY(position.y)] = createBrick(position, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: BRICK_COLORS[activeBrickColor] });
+    brickPlaceOrder.push({ x: position.x, y: position.y, z: position.z });
 
+    SFX_PLACE.currentTime = 0;
     SFX_PLACE.play();
 
     updateActiveBrick();
 }
 
-function undoPlace() {
+function undoBrick() {
     // If there is nothing to undo, do not try and undo the place
     if (brickPlaceOrder.length == 0) {
         return;
     }
 
     // Get the coordinates of the previous block
-    let previousX = brickPlaceOrder[brickPlaceOrder.length - 1].x;
-    let previousY = brickPlaceOrder[brickPlaceOrder.length - 1].y;
-    let previousZ = brickPlaceOrder[brickPlaceOrder.length - 1].z;
+    let prevPosition = brickPlaceOrder.pop();
 
     // Remove the brick from the scene
-    scene.remove(brickTerrain[previousX][previousZ][indexY(previousY)]);
-    brickTerrain[previousX][previousZ][indexY(previousY)] = undefined;
-    brickPlaceOrder.pop();
+    scene.remove(brickTerrain[prevPosition.x][prevPosition.z][indexY(prevPosition.y)]);
+    brickTerrain[prevPosition.x][prevPosition.z][indexY(prevPosition.y)] = undefined;
 
+    SFX_UNDO.currentTime = 0;
     SFX_UNDO.play();
 
     updateActiveBrick();
@@ -300,37 +292,55 @@ function setActiveBrickColor(colorIndex) {
         brickPart.material.color.set(BRICK_COLORS[activeBrickColor]);
     });
 
+    SFX_SWITCH.currentTime = 0;
     SFX_SWITCH.play();
 }
 
-// Returns true if there are bricks surrounding the position
-function checkForSurroundingBricksAt(x, y, z) {
+function checkForIntersectingBrickAt(position) {
     return (
-        checkForBrickAt(x + STUD_SPACING, y, z - STUD_SPACING) || checkForBrickAt(x + STUD_SPACING, y, z) || checkForBrickAt(x + STUD_SPACING, y, z + STUD_SPACING) ||
-        checkForBrickAt(x, y, z - STUD_SPACING) || checkForBrickAt(x, y, z) || checkForBrickAt(x, y, z + STUD_SPACING) ||
-        checkForBrickAt(x - STUD_SPACING, y, z - STUD_SPACING) || checkForBrickAt(x - STUD_SPACING, y, z) || checkForBrickAt(x - STUD_SPACING, y, z + STUD_SPACING)
+        checkForBrickAt({ x: position.x + STUD_SPACING, y: position.y, z: position.z - STUD_SPACING }) ||
+        checkForBrickAt({ x: position.x + STUD_SPACING, y: position.y, z: position.z }) ||
+        checkForBrickAt({ x: position.x + STUD_SPACING, y: position.y, z: position.z + STUD_SPACING }) ||
+        checkForBrickAt({ x: position.x, y: position.y, z: position.z - STUD_SPACING }) ||
+        checkForBrickAt({ x: position.x, y: position.y, z: position.z }) ||
+        checkForBrickAt({ x: position.x, y: position.y, z: position.z + STUD_SPACING }) ||
+        checkForBrickAt({ x: position.x - STUD_SPACING, y: position.y, z: position.z - STUD_SPACING }) ||
+        checkForBrickAt({ x: position.x - STUD_SPACING, y: position.y, z: position.z }) ||
+        checkForBrickAt({ x: position.x - STUD_SPACING, y: position.y, z: position.z + STUD_SPACING })
     );
 }
 
-// Returns true if there is a brick at the position
-function checkForBrickAt(x, y, z) {
+function checkForBrickAt(position) {
     // If the check is out of bounds on the x or z axis, then there is no block there
-    if (x < WORLD_MIN || x > WORLD_MAX || z < WORLD_MIN || z > WORLD_MAX) {
+    if (!inXBounds(position.x) || !inZBounds(position.z)) {
         return false;
     }
 
     // Since the ground should act as a block, this should also return true if the y value is less than 0
-    if (indexY(y) < 0) {
+    if (indexY(position.y) < 0) {
         return true;
     }
 
     // If the block at that position is undefined, then there is no block at the position
-    if (brickTerrain[x][z][indexY(y)] == undefined) {
+    if (brickTerrain[position.x][position.z][indexY(position.y)] == undefined) {
         return false;
     }
 
     // Return true if all of the previous checks fail
+    // This means that there is a brick at the specified position
     return true;
+}
+
+function inXBounds(x) {
+    return (x >= WORLD_MIN && x <= WORLD_MAX);
+}
+
+function inZBounds(z) {
+    return (z >= WORLD_MIN && z <= WORLD_MAX);
+}
+
+function inYBounds(y) {
+    return (y >= 0 && y <= WORLD_SIZE * BRICK_HEIGHT);
 }
 
 function indexY(y) {
