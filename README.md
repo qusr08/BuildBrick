@@ -38,7 +38,7 @@
 
 > One of the biggest challenges that I faced, and that was demonstrated in my video, was the sensors I have for my Arduino. I have used them for over 6 years and they finally decided to break on me for this project. The wiring of them inside the BuildBrick was very difficult and caused some of the sensors to break. I have had no experience with wiring something like this before, and I feel that my lack of knowledge bit me in the butt. I definitely over-scoped a little bit for this project, but in the end, I do not regret my decision to do this idea. I think this is one of the most interesting projects I have worked on, and will definitely be making a second, more refined version of the BuildBrick.
 
-> I am very sorry that I could not make something satisfactory for this assignment. I know the physical prototype does not function exactly as it should, and I know how important that is for this class. I hope that the website or meaningful interaction I strived for will stay in your mind. The complex experience I tried to create didn’t end up working out as I would have liked, but I feel damn good about trying.
+> I am very sorry that I could not make something satisfactory for this assignment. I know the physical prototype does not function exactly as it should, and I know how important that is for this class. I hope that the website or meaningful interaction I strived for will stay in your mind. The complex experience I tried to create didn’t end up working out as I would have liked, but I feel damn good that I stuck with the idea as it taught me a lot.
 
 ## Development Photos
 
