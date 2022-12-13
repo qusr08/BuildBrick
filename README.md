@@ -3,6 +3,8 @@
 ![Final BuildBrick](https://github.com/qusr08/BuildBrick/blob/main/media/buildbrick_image_4.jpg)
  
 ## Files
+> [buildbrick.fzz](https://github.com/qusr08/BuildBrick/blob/main/fzz/buildbrick.fzz): The Fritzing file for the circuit schematic
+
 > [buildbrick.ino](https://github.com/qusr08/BuildBrick/blob/main/ino/buildbrick/buildbrick.ino): The Arduino file for controlling the BuildBrick
 
 > [build.js](https://github.com/qusr08/BuildBrick/blob/main/js/build.js): The Javascript file responsible for running the Lego building sandbox
@@ -29,6 +31,7 @@
 > * U to undo any previous placements
 
 ## Circuit Schematic
+![Schematic For BuildBrick](https://github.com/qusr08/BuildBrick/blob/main/fzz/buildbrick_bb.png)
 
 ## Challenges And Problems Encountered
 > Going into the project, I knew how difficult the website was going to be to create. Making an entire building sandbox from scratch in Javascript was no easy task, and it took me a very long time to make. The biggest challenge I faced while developing the website was how to determine if the Lego brick the user controls should stack on top of it. The Lego brick that the user controls moves up and down based on collision with other Lego bricks in the world. This seems like nothing when said in a sentence like that, but it took forever to come up with a way to track brick data in three dimensions. Not to mention that each brick is two by two studs so using a regular three-dimensional array did not cut it. The idea that lead to me being able to solve this problem was to make the world positions of the Lego bricks and the indices in the data array to be the same, as converting between the two was making my code very long and hard to follow. Overall, I am very happy with how the website turned out, and I think its functionality is extremely great.
