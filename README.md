@@ -14,7 +14,7 @@
 > [index.html](https://github.com/qusr08/BuildBrick/blob/main/index.html): The main HTML file for the website
 
 ## My Goal
-> My goal for this project was to make a very meaningful interaction between my Arduino and my computer. Lego as my household object really dictated the theme of my project and made it easy to come up with most of the functionality for BuildBrick.
+> My goal for this project was to make a very meaningful interaction between my Arduino and my computer. Lego as my household object really dictated the theme of my project and made it easy to come up with most of the functionality for BuildBrick. The intended interaction is for the user to use the BuildBrick to make a cool Lego creation on my website.
 
 ## Demo/Explanation Video
 > [IGME-470 P3 Squawk Demo](https://www.youtube.com/watch?v=9kNOhgKtYPk): A video showing off and explaining what I was able to do for this project.
