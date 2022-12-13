@@ -36,7 +36,7 @@ let scene, camera, renderer, controls;
 let brickTerrain = [];
 let brickPlaceOrder = [];
 let activeBrick = undefined;
-let activeBrickColor = 0;
+let activeBrickColor = 9;
 
 window.onload = function(event) {
     // Create renderer
@@ -83,9 +83,7 @@ window.onload = function(event) {
     }
 
     // Create the brick that will move with player input
-    activeBrick = createBrick({ x: WORLD_MAX, y: 0, z: WORLD_MAX }, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: 0xFFFFFF, transparent: true, opacity: ACTIVE_BRICK_ALPHA });
-    // Set the color to orange to start
-    setActiveBrickColor(9);
+    activeBrick = createBrick({ x: WORLD_MAX, y: 0, z: WORLD_MAX }, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: BRICK_COLORS[activeBrickColor], transparent: true, opacity: ACTIVE_BRICK_ALPHA });
 
     // Load brick terrain from URL
     loadBrickTerrain();
@@ -122,7 +120,7 @@ window.onkeydown = function(event) {
             placeBrick(activeBrick.position);
             break;
         case 13: // Enter
-            setActiveBrickColor((activeBrickColor + 1) % BRICK_COLORS.length);
+            changeColor();
             break;
         case 85: // U
             undoBrick();
@@ -133,7 +131,7 @@ window.onkeydown = function(event) {
 function update() {
     requestAnimationFrame(update);
 
-    readSerial();
+    updateSerialData();
 
     controls.update();
     renderer.render(scene, camera);
@@ -217,7 +215,7 @@ function loadBrickTerrain() {
             let z = CHARS.indexOf(itemData[2]);
             let color = BRICK_COLORS[CHARS.indexOf(itemData[3])];
 
-            brickTerrain[x][z][y] = createBrick(x, y * BRICK_HEIGHT, z, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: color });
+            brickTerrain[x][z][y] = createBrick({ x: x, y: y * BRICK_HEIGHT, z: z }, ACTIVE_BRICK_SIZE, ACTIVE_BRICK_SIZE, false, { color: color });
         } catch {
             console.error("Corrupt terrain data!");
         }
@@ -237,6 +235,10 @@ function moveActiveBrick(moveX, moveY, moveZ, playSound) {
     }
 
     updateActiveBrick();
+}
+
+function setActiveBrick(x, z) {
+    moveActiveBrick(x - activeBrick.position.x, 0, z - activeBrick.position.z, false);
 }
 
 function updateActiveBrick() {
@@ -286,8 +288,8 @@ function undoBrick() {
     updateActiveBrick();
 }
 
-function setActiveBrickColor(colorIndex) {
-    activeBrickColor = colorIndex;
+function changeColor() {
+    activeBrickColor = (activeBrickColor + 1) % BRICK_COLORS.length;
     activeBrick.children.forEach(brickPart => {
         brickPart.material.color.set(BRICK_COLORS[activeBrickColor]);
     });
